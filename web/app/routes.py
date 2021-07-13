@@ -1,10 +1,11 @@
-from app import app, db, queue_client
+from app import app, db, connstr, queue_name
+# from app import app, db, queue_client
 from datetime import datetime
 from app.models import Attendee, Conference, Notification
 from flask import render_template, session, request, redirect, url_for, flash, make_response, session
-from azure.servicebus import Message
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+# from sendgrid import SendGridAPIClient
+# from sendgrid.helpers.mail import Mail
 import logging
 
 @app.route('/')
@@ -66,11 +67,14 @@ def notification():
         try:
             db.session.add(notification)
             db.session.commit()
-
+            (print, "Saved item to database.")
             ##################################################
             ## TODO: Refactor This logic into an Azure Function
             ## Code below will be replaced by a message queue
             #################################################
+            
+            """
+            # This code was moved to an Azure Function
             attendees = Attendee.query.all()
 
             for attendee in attendees:
@@ -80,23 +84,33 @@ def notification():
             notification.completed_date = datetime.utcnow()
             notification.status = 'Notified {} attendees'.format(len(attendees))
             db.session.commit()
-            # TODO Call servicebus queue_client to enqueue notification ID
+            """
 
+            # TODO Call servicebus queue_client to enqueue notification ID
+            print("Logging 2")
+            with ServiceBusClient.from_connection_string(connstr) as client:
+                with client.get_queue_sender(queue_name) as sender:
+                    # Sending a single message
+                    message = ("{}".format(notification.id))
+                    single_message = ServiceBusMessage(message)
+                    print(single_message, " is the single_message")
+                    sender.send_messages(single_message)
             #################################################
             ## END of TODO
             #################################################
-
+            print("Logging 3")
             return redirect('/Notifications')
-        except :
+        except Exception:
             logging.error('log unable to save notification')
 
     else:
+        print("Logging 4")
         return render_template('notification.html')
 
-
-
+"""
+# This code was moved to an Azure Function
 def send_email(email, subject, body):
-    if not app.config.get('SENDGRID_API_KEY')
+    if not app.config.get('SENDGRID_API_KEY'):
         message = Mail(
             from_email=app.config.get('ADMIN_EMAIL_ADDRESS'),
             to_emails=email,
@@ -105,3 +119,4 @@ def send_email(email, subject, body):
 
         sg = SendGridAPIClient(app.config.get('SENDGRID_API_KEY'))
         sg.send(message)
+"""
