@@ -1,9 +1,9 @@
-from app import app, db, connstr, queue_name
-# from app import app, db, queue_client
+# from app import app, db, connstr, queue_name
+from app import app, db, queue_client
 from datetime import datetime
 from app.models import Attendee, Conference, Notification
 from flask import render_template, session, request, redirect, url_for, flash, make_response, session
-from azure.servicebus import ServiceBusClient, ServiceBusMessage
+# from azure.servicebus import ServiceBusClient, ServiceBusMessage
 # from sendgrid import SendGridAPIClient
 # from sendgrid.helpers.mail import Mail
 import logging
@@ -73,28 +73,25 @@ def notification():
             ## Code below will be replaced by a message queue
             #################################################
             
-            """
+            
             # This code was moved to an Azure Function
             attendees = Attendee.query.all()
 
-            for attendee in attendees:
-                subject = '{}: {}'.format(attendee.first_name, notification.subject)
-                send_email(attendee.email, subject, notification.message)
+            # for attendee in attendees:
+            #     subject = '{}: {}'.format(attendee.first_name, notification.subject)
+                # send_email(attendee.email, subject, notification.message)
 
             notification.completed_date = datetime.utcnow()
             notification.status = 'Notified {} attendees'.format(len(attendees))
             db.session.commit()
-            """
+           
 
             # TODO Call servicebus queue_client to enqueue notification ID
-            print("Logging 2")
-            with ServiceBusClient.from_connection_string(connstr) as client:
-                with client.get_queue_sender(queue_name) as sender:
-                    # Sending a single message
-                    message = ("{}".format(notification.id))
-                    single_message = ServiceBusMessage(message)
-                    print(single_message, " is the single_message")
-                    sender.send_messages(single_message)
+            
+            with queue_client.get_sender() as sender:
+                message = Message("{}".format(notification.id))
+                sender.send(message)
+
             #################################################
             ## END of TODO
             #################################################
