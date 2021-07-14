@@ -67,7 +67,7 @@ def notification():
         try:
             db.session.add(notification)
             db.session.commit()
-            (print, "Saved item to database.")
+            print ("Saved item to database.")
             ##################################################
             ## TODO: Refactor This logic into an Azure Function
             ## Code below will be replaced by a message queue
