@@ -6,7 +6,7 @@
       "type": "serviceBusTrigger",
       "direction": "in",
       "queueName": "notificationqueue",
-      "connection": "namespacetechconf_SERVICEBUS"
+      "connection": "SERVICE_BUS_CONNECTION_STRING"
     }
   ]
 }
